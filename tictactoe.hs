@@ -6,6 +6,9 @@ import System.IO
 lineLength = 3
 initialPlayer = PlayerOne
 
+maybeFallback (Just newVal) _ = newVal
+maybeFallback Nothing fallback = fallback
+
 data Field = Empty | X | O deriving (Show, Eq)
 
 fieldToString Empty = "."
@@ -91,9 +94,7 @@ boardToString n (b:bs)
     | n == (lineLength - 1) = (fieldToString b) ++ "\n" ++ boardToString 0 bs
     | otherwise = (fieldToString b) ++ boardToString (n + 1) bs
 
-renderBoard b = putStr $ boardToString 0 b
-
-renderGame g = do
+renderBoard g = do
   putStr $ boardToString 0 (getGameBoard g)
   return g
 
@@ -152,20 +153,18 @@ checkInput game = do
   return (processTurn game coordinates)
 
 
-maybeFallback (Just newVal) _ = newVal
-maybeFallback Nothing fallback = fallback
-
 playerGreeting p = "It is " ++ playerToString p ++ "s turn!\n"
 
 gameLoop oldGame@(Game board player messages) = do
-  renderGame oldGame >>= renderMessages >>= checkInput >>= nextTurn
+ renderBoard oldGame >>= renderMessages >>= checkInput >>= nextTurn
   where nextTurn game 
             | won game  == Left PlayerOne = renderVictory game PlayerOne
             | won game  == Left PlayerTwo = renderVictory game PlayerTwo
-            | otherwise = gameLoop $ game
+            | otherwise = gameLoop game
             where renderVictory game player = do
                     putStr $ playerToString player ++ " has won the game.\n"
-                    renderBoard (getGameBoard game)
+                    renderBoard game
+                    return 1
 
 prompt msg = do
   putStr msg
