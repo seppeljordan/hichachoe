@@ -93,7 +93,9 @@ boardToString n (b:bs)
 
 renderBoard b = putStr $ boardToString 0 b
 
-
+renderGame g = do
+  putStr $ boardToString 0 (getGameBoard g)
+  return g
 
 -- This method is intended to translate numbers from the numpad to
 -- coordinates in a 3x3 game of tictactoe.
@@ -144,18 +146,19 @@ processTurn (Game board player messages) coordinates = Game newboard newplayer n
           turnsuccess = not turnfail
           newmessages = if turnsuccess then messages else "Invalid Turn":messages
 
+checkInput game = do
+  putStr $ playerGreeting (getGamePlayer game)
+  coordinates <- (getCoordinates "Where? ")
+  return (processTurn game coordinates)
+
+
 maybeFallback (Just newVal) _ = newVal
 maybeFallback Nothing fallback = fallback
 
 playerGreeting p = "It is " ++ playerToString p ++ "s turn!\n"
 
 gameLoop oldGame@(Game board player messages) = do
-  renderBoard board
-  game <- renderMessages oldGame
-  putStr $ playerGreeting player
-  coordinates <- (getCoordinates "Where? ")
-  newGame <- return (processTurn game coordinates)
-  nextTurn newGame
+  renderGame oldGame >>= renderMessages >>= checkInput >>= nextTurn
   where nextTurn game 
             | won game  == Left PlayerOne = renderVictory game PlayerOne
             | won game  == Left PlayerTwo = renderVictory game PlayerTwo
