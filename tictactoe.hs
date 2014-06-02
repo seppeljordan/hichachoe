@@ -9,34 +9,77 @@ initialPlayer = PlayerOne
 maybeFallback (Just newVal) _ = newVal
 maybeFallback Nothing fallback = fallback
 
-data Field = Empty | X | O deriving (Show, Eq)
+flatten [] = []
+flatten (ys:xs) = ys ++ (flatten xs)
+
+class Renderable a where
+    render :: a -> IO ()
+
+data Field = Empty | X | O deriving (Eq)
 
 fieldToString Empty = "."
 fieldToString X = "X"
 fieldToString O = "O"
 
+instance Renderable Field where
+    render x = putStr $ fieldToString x
+
+instance Show Field where
+    show f = fieldToString f
+
 fieldToPlayer X = PlayerOne
 fieldToPlayer O = PlayerTwo
 fieldToPlayer Empty = PlayerNone
 
-type Board = [Field]
+data Line = Line [Field] deriving (Eq)
 
-fieldAt board x y
-    | validCoord x && validCoord y = Just (board !! coordinatesToIndex x y)
+makeLine xs = Line xs
+getLineList (Line l) = l
+lineFieldAt line index = (getLineList line) !! index
+lineSetFieldAt l n newElem = makeLine $ iterateLine (getLineList l) n
+    where iterateLine l 0 = newElem:(tail l)
+          iterateLine l n = (head l):(iterateLine (tail l) (n - 1))
+
+makeNewLine = makeLine $ take lineLength $ repeat Empty
+
+instance Renderable Line where
+    render l = putStr $ (show l) ++ "\n"
+
+instance Show Line where
+    show l = flatten (map show (getLineList l))
+
+data Board = Board [Line] deriving (Eq)
+
+makeBoardOfList lines = Board lines
+getBoardLines (Board lines) = lines
+changeBoardField board (x,y) newValue = makeBoardOfList $ iterateBoard (getBoardLines board) y
+    where iterateBoard (line:lines) 0 = (lineSetFieldAt line x newValue):lines
+          iterateBoard (line:lines) n = line:(iterateBoard lines (n - 1))
+
+makeNewBoard = makeBoardOfList (take lineLength $ repeat makeNewLine)
+
+instance Renderable Board where
+    render b = do
+      putStr $ unlines $ map show (getBoardLines b)
+      putStr "\n"
+
+instance Show Board where
+    show b = unlines $ map show $ map getLineList (getBoardLines b)
+
+boardFieldAt board x y
+    | validCoord x && validCoord y = Just (lineFieldAt (line y) x)
     | otherwise = Nothing
+    where line n = (getBoardLines board) !! n
 
-makeNewBoard = take (lineLength * lineLength) $ repeat Empty
 
-setField board field (x,y)
-    | x < 0 || x > lineLength = Nothing
-    | y < 0 || y > lineLength = Nothing
-    | fieldAt board x y /= Just Empty = Nothing
-    | otherwise = setFieldByIndex board field (coordinatesToIndex x y)
+boardToString n [] = ""
+boardToString n (b:bs)
+    | n == (lineLength - 1) = (fieldToString b) ++ "\n" ++ boardToString 0 bs
+    | otherwise = (fieldToString b) ++ boardToString (n + 1) bs
 
-setFieldByIndex _ _ n
-    | n < 0 || n > (lineLength * lineLength) = Nothing
-setFieldByIndex (b:bs) field 0 = Just (field:bs)
-setFieldByIndex (b:bs) field n = (Just (b:)) <*> (setFieldByIndex bs field (n - 1))
+renderBoard g = do
+  render (getGameBoard g)
+  return g
 
 data Player = PlayerOne | PlayerTwo | PlayerNone deriving (Eq, Show)
 
@@ -52,12 +95,20 @@ playerToString PlayerOne = "Player X"
 playerToString PlayerTwo = "Player O"
 playerToString PlayerNone = "No Player"
 
-type Message = String
+data Message = Message String
 
-renderMessage m = putStr (m ++ "\n")
+getMessage (Message m) = m
+makeMessage m = Message m
+
+instance Show Message where
+    show m = getMessage m
+
+instance Renderable Message where
+    render m = putStr (getMessage m ++ "\n")
+
 renderMessages (Game board player []) = return (Game board player [])
 renderMessages (Game board player (m:ms)) = do
-  renderMessage m
+  render m
   renderMessages (Game board player ms)
 
 data Game = Game Board Player [Message] deriving (Show)
@@ -78,7 +129,7 @@ won (Game board player _)
                     diagonals = or [diagonalTopLeft, diagonalTopRight]
                         where diagonalTopLeft = (isOfPlayer 0 0) && (isOfPlayer 1 1) && (isOfPlayer 2 2)
                               diagonalTopRight = (isOfPlayer 0 2) && (isOfPlayer 1 1) && (isOfPlayer 2 0)
-                    isOfPlayer x y = if (player == (maybe PlayerNone fieldToPlayer (fieldAt board x y))) then True else False
+                    isOfPlayer x y = if (player == (maybe PlayerNone fieldToPlayer (boardFieldAt board x y))) then True else False
                               
                                
 
@@ -88,15 +139,6 @@ validCoord x
     | x < 0 = False
     | x > 2 = False
     | otherwise = True
-
-boardToString n [] = ""
-boardToString n (b:bs)
-    | n == (lineLength - 1) = (fieldToString b) ++ "\n" ++ boardToString 0 bs
-    | otherwise = (fieldToString b) ++ boardToString (n + 1) bs
-
-renderBoard g = do
-  putStr $ boardToString 0 (getGameBoard g)
-  return g
 
 -- This method is intended to translate numbers from the numpad to
 -- coordinates in a 3x3 game of tictactoe.
@@ -114,6 +156,8 @@ numpadToCoord 9 = Just (2,0)
 numpadToCoord 6 = Just (2,1)
 numpadToCoord 3 = Just (2,2)
 numpadToCoord x = Nothing
+
+coordToNumpad (x,y) = (3*(2-y)+x)+1
 
 strToNum = (convStrToNum . reverse)
 convStrToNum [] = pure 0
@@ -141,11 +185,11 @@ getCoordinates inputprompt = do
         result (Just x) = return x
   
 processTurn (Game board player messages) coordinates = Game newboard newplayer newmessages
-    where newboard = maybeFallback (setField board (playerToField player) coordinates) board
+    where newboard = changeBoardField board coordinates (playerToField player) 
           newplayer = if turnfail then player else otherPlayer player
+          newmessages = if turnsuccess then messages else (makeMessage "Invalid Turn"):messages
           turnfail = (newboard == board)
           turnsuccess = not turnfail
-          newmessages = if turnsuccess then messages else "Invalid Turn":messages
 
 checkInput game = do
   putStr $ playerGreeting (getGamePlayer game)
