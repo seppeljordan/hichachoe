@@ -1,0 +1,20 @@
+* World
+** makeNewGame
+   This procedure produces an empty game where player X has the first
+   turn.
+** gameWon
+   This procedure checks, if a player has won and returns that player.
+   If no player has won then 'Right False' is returned.
+** gameAddMessage
+   This procedure takes a world state and a message and adds it to the
+   active message stack.
+** gameProcessMove
+   This procedure takes a game state and coordinates and returns a new
+   game state where the following rules apply:
+
+   If move that is about to be executet is valid then the game state
+   should change so that the other player has their turn.
+
+   If the move is invalid then nothing should happen to the game state
+   execept that there is a new message that says that the turn was
+   invalid.
