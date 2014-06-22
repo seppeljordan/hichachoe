@@ -1,5 +1,6 @@
 # vim back file
 /**/*~
+
 /tictactoe
-/tictactoe.hi
-/tictactoe.o
+/**/*.hi
+/**/*.o

@@ -1,4 +1,4 @@
-module Worldstate ( gameProcessMove, gameActivePlayer, gameOtherPlayer
+module Worldstate ( Game, gameProcessMove, gameActivePlayer, gameOtherPlayer
                   , makeNewGame
                   , gameWon
                   , gameAddMessage, gameClearMessages
