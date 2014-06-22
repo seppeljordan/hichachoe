@@ -4,7 +4,7 @@ module Worldstate ( gameProcessMove
                   , gameAddMessage
                   , Message, makeMessage
                   , Player
-                  , Coordinates, boardDimensions )
+                  , Coordinates, boardDimensions, validCoordinates )
 where
 
 import Board
