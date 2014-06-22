@@ -1,15 +1,9 @@
 -- We want to program the game of tic tac toe, also known as XO
 
-import Control.Applicative
 import System.IO
 import Worldstate
 import Input
 import Output
-
-maybeFallback (Just newVal) _ = newVal
-maybeFallback Nothing fallback = fallback
-
--- Input of Data
 
 checkInput game = do
   putStr $ playerGreeting (show (gameActivePlayer game))
