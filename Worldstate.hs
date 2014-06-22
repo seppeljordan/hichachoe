@@ -1,13 +1,14 @@
 module Worldstate ( gameProcessMove, gameActivePlayer, gameOtherPlayer
                   , makeNewGame
                   , gameWon
-                  , gameAddMessage
+                  , gameAddMessage, gameClearMessages
                   , Message, makeMessage
                   , Player
                   , Coordinates, boardDimensions, validCoordinates )
 where
 
 import Board
+import Output
 
 data Message = Message String
 
@@ -16,6 +17,9 @@ makeMessage m = Message m
 
 instance Show Message where
     show m = getMessage m
+
+instance Renderable Message where
+    render m = putStr $ show m ++ "\n"
 
 data Game = Game Board Player [Message] deriving (Show)
 
@@ -34,6 +38,9 @@ gameOtherPlayer game = otherPlayer $ gamePlayer game
 
 gameAddMessage :: Game -> Message -> Game
 gameAddMessage game m = makeGame (gameBoard game) (gamePlayer game) (m: (gameMessages game))
+
+gameClearMessages :: Game -> Game
+gameClearMessages game = makeGame (gameBoard game) (gamePlayer game) []
 
 makeNewGame :: Game
 makeNewGame = Game makeEmptyBoard firstPlayer []
@@ -70,3 +77,8 @@ validCoord x
     | x < boardDimensions = False
     | x > boardDimensions = False
     | otherwise = True
+
+instance Renderable Game where
+    render game = do
+      render $ gameBoard game
+      sequence_ $ map render (reverse (gameMessages game))
