@@ -8,6 +8,8 @@ module Board ( Board, makeEmptyBoard, boardFieldAt, boardChangeField
              , Field )
 where
 
+import Output
+
 boardDimensions :: Int
 boardDimensions = 3
 
@@ -70,7 +72,12 @@ makeEmptyBoard = makeBoardOfList (take boardDimensions $ repeat makeNewLine)
 
 
 instance Show Board where
-    show b = unlines $ map show $ map getLineList (boardLines b)
+    show b = unlines $ map show (boardLines b)
+
+instance Renderable Board where
+    render b = do
+      putStr $ show b
+
 
 boardFieldAt :: Board -> Coordinates -> Field
 boardFieldAt board (x,y)
