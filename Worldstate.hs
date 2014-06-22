@@ -1,4 +1,4 @@
-module Worldstate ( gameProcessMove
+module Worldstate ( gameProcessMove, gameActivePlayer, gameOtherPlayer
                   , makeNewGame
                   , gameWon
                   , gameAddMessage
@@ -25,6 +25,12 @@ makeGame b p ms = Game b p ms
 gamePlayer (Game _ player _) = player
 gameBoard (Game board _ _) = board
 gameMessages (Game _ _ messages) = messages
+
+gameActivePlayer :: Game -> Player
+gameActivePlayer game = gamePlayer game
+
+gameOtherPlayer :: Game -> Player
+gameOtherPlayer game = otherPlayer $ gamePlayer game
 
 gameAddMessage :: Game -> Message -> Game
 gameAddMessage game m = makeGame (gameBoard game) (gamePlayer game) (m: (gameMessages game))
