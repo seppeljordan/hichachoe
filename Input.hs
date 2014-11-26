@@ -2,7 +2,7 @@ module Input ( getCoordinates
              , Coordinates )
 where
 
-import Control.Applicative
+import Control.Monad
 import Worldstate
 import System.IO
 
@@ -24,23 +24,25 @@ numpadToCoord 6 = Just (2,1)
 numpadToCoord 3 = Just (2,2)
 numpadToCoord x = Nothing
 
-coordToNumpad (x,y) = (3*(2-y)+x)+1
+coordToNumpad (x,y) = 5 - 3 * y + x 
 
-strToNum = (convStrToNum . reverse)
-convStrToNum [] = pure 0
-convStrToNum (x:xs) = pure (+) <*> charToInt x <*> (pure (10 * ) <*> convStrToNum xs)
+strToNum :: (Monad m) => String -> m Int
+strToNum xs = (liftM addUp.sequence.map charToInt) xs
+    where addUp list = foldl (\accu x -> 10* accu + x) 0 list
 
-charToInt '0' = pure 0
-charToInt '1' = pure 1
-charToInt '2' = pure 2
-charToInt '3' = pure 3
-charToInt '4' = pure 4
-charToInt '5' = pure 5
-charToInt '6' = pure 6
-charToInt '7' = pure 7
-charToInt '8' = pure 8
-charToInt '9' = pure 9
-charToInt x = Nothing
+
+charToInt :: (Monad m) => Char -> m Int
+charToInt '0' = return 0
+charToInt '1' = return 1
+charToInt '2' = return 2
+charToInt '3' = return 3
+charToInt '4' = return 4
+charToInt '5' = return 5
+charToInt '6' = return 6
+charToInt '7' = return 7
+charToInt '8' = return 8
+charToInt '9' = return 9
+charToInt x = fail ("charToInt: "++show x++" is not a digit")
 
 getCoordinates :: String -> IO Coordinates
 getCoordinates inputprompt = do

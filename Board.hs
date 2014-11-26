@@ -96,27 +96,20 @@ boardWon b
     | playerWon PlayerOne = Just PlayerOne
     | playerWon PlayerTwo = Just PlayerTwo
     | otherwise = Nothing
-    where boardList :: [Maybe Player]
-          boardList = map (boardPlayerAt b) [ (x,y) | y <- [0..boardMaxIndex], x <- [0..boardMaxIndex] ]
-          boardMaxIndex :: Int
+    where boardMaxIndex :: Int
           boardMaxIndex = boardDimensions - 1
-          boardSquare :: [[Maybe Player]]
-          boardSquare = let aux [] accu = accu
-                            aux xs accu = aux (drop boardDimensions xs) ((take boardDimensions xs):accu)
-                        in aux boardList [[]]
           has :: Player -> Int -> (Int -> [Maybe Player]) -> Bool
           has p n line = foldl (&&) True $ map ((Just p) ==) (line n)
           row :: Int -> [Maybe Player]
-          row n = boardSquare !! n
+          row n = map (boardPlayerAt b) [ (n,m) | m <- [0..boardMaxIndex] ]
           col :: Int -> [Maybe Player]
-          col n = [(boardSquare !! n) !! y  | y <- [0..boardMaxIndex]]
-          diag :: Int -> [Maybe Player]
-          diag 0 = [(boardSquare !! n) !! n | n <- [0..boardMaxIndex]]
-          diag 1 = [(boardSquare !! n) !! (boardMaxIndex - n) | n <- [0..boardMaxIndex]]
+          col m = map (boardPlayerAt b) [ (n,m) | n <- [0..boardMaxIndex] ]
+          diag0 = map (boardPlayerAt b) [(n,n) | n <- [0..boardMaxIndex]]
+          diag1 = map (boardPlayerAt b) [(n, boardMaxIndex - n) | n <- [0..boardMaxIndex]]
           playerWon :: Player -> Bool
           playerWon p = or $ [ has p r row | r <- [0..boardMaxIndex]]
                         ++ [ has p r col | r <- [0..boardMaxIndex]]
-                        ++ [ has p r diag | r <- [0,1]]
+                        ++ [ has p r ([diag0,diag1]!!) | r <- [0,1]]
 
 boardToString n [] = ""
 boardToString n (b:bs)
